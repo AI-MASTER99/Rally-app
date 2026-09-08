@@ -70,7 +70,7 @@ export function App() {
         }}
       />
 
-      {result && <SpeedTable segments={result.segments} uncertain={result.uncertain} />}
+      {result && <SpeedTable segments={result.segments} />}
 
       {/* Only shown when the sheet and the derived speeds actually disagree. */}
       {result && result.unexplained > 0 && (
@@ -78,11 +78,6 @@ export function App() {
           {plural(result.unexplained, 'regel', 'regels')} op de foto{' '}
           {result.unexplained === 1 ? 'past' : 'passen'} niet bij deze snelheden — controleer het
           blad.
-        </p>
-      )}
-      {result && result.uncertain.length > 0 && (
-        <p className="warning" role="status">
-          Bij ± staan de tijden te grof op het blad om de snelheid op één km/u vast te leggen.
         </p>
       )}
 

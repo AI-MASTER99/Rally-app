@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { solveRoadbook, type RoadbookLeg } from '../roadbook';
 import { formatTime } from '../time';
 
-/** The example sheet: leg lengths, elapsed time since the start. */
+/** The example sheet: leg lengths, exact elapsed time since the start. */
 const EXAMPLE: RoadbookLeg[] = [
   { distanceMetres: 600, instruction: 'naar rechts', time: '1:11' },
   { distanceMetres: 200, instruction: 'naar links', time: '1:32' },
@@ -20,19 +20,10 @@ describe('solveRoadbook', () => {
     expect(routeEndKm).toBe(1.6);
   });
 
-  it('flags the legs whose printed precision allows several whole km/h', () => {
-    // 200 m in 21 s ± 1 s spans 32.7 to 36 km/h; 600 m in 71 s ± 0.5 s does not
-    // span a second integer.
-    const { uncertain } = solveRoadbook(EXAMPLE);
-    expect(uncertain).toEqual([1, 2]);
-  });
-
-  it('pins those same legs once the sheet prints tenths', () => {
-    const precise = EXAMPLE.map((leg, i) => ({
-      ...leg,
-      time: formatTime([71.4, 92.5, 165.5][i]!),
-    }));
-    expect(solveRoadbook(precise).uncertain).toEqual([]);
+  it('takes the printed times at face value', () => {
+    // 200 m in 1:32 - 1:11 = 21 s is 34.29 km/h, so the whole km/h is 34.
+    const [, second] = solveRoadbook(EXAMPLE).segments;
+    expect(second!.speedKmh).toBe(Math.round((3.6 * 200) / 21));
   });
 
   it('reads a distance column that counts from the start', () => {
@@ -52,7 +43,6 @@ describe('solveRoadbook', () => {
       { distanceMetres: 800, instruction: 'naar rechts', time: formatTime(108 + 96) },
     ];
     expect(solveRoadbook(legs).segments.map((s) => s.speedKmh)).toEqual([40, 30]);
-    expect(solveRoadbook(legs).uncertain).toEqual([]);
   });
 
   it('skips a leg it cannot use rather than guessing', () => {
@@ -72,6 +62,6 @@ describe('solveRoadbook', () => {
   });
 
   it('returns nothing for an empty sheet', () => {
-    expect(solveRoadbook([])).toEqual({ segments: [], routeEndKm: 0, uncertain: [], skipped: [] });
+    expect(solveRoadbook([])).toEqual({ segments: [], routeEndKm: 0, skipped: [] });
   });
 });

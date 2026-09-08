@@ -36,7 +36,7 @@ describe('interpretSheet', () => {
   it('reads a time table', () => {
     const result = interpretSheet(RT10);
     expect(result.segments).toEqual(RT10_SEGMENTS);
-    expect(result).toMatchObject({ routeEndKm: 6, unexplained: 0, uncertain: [] });
+    expect(result).toMatchObject({ routeEndKm: 6, unexplained: 0 });
   });
 
   it('reads a road book, keeping the instructions', () => {
@@ -46,17 +46,12 @@ describe('interpretSheet', () => {
       { fromKm: 0.6, toKm: 0.8, speedKmh: 34, instruction: 'naar links' },
       { fromKm: 0.8, toKm: 1.6, speedKmh: 39, instruction: 'recht door' },
     ]);
-    expect(result).toMatchObject({ routeEndKm: 1.6, unexplained: 0, uncertain: [1, 2] });
+    expect(result).toMatchObject({ routeEndKm: 1.6, unexplained: 0 });
   });
 
   it('gives both kinds the same shape of answer', () => {
     for (const result of [interpretSheet(RT10), interpretSheet(ROADBOOK)]) {
-      expect(Object.keys(result).sort()).toEqual([
-        'routeEndKm',
-        'segments',
-        'uncertain',
-        'unexplained',
-      ]);
+      expect(Object.keys(result).sort()).toEqual(['routeEndKm', 'segments', 'unexplained']);
     }
   });
 

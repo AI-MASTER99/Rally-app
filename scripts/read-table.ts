@@ -42,17 +42,13 @@ console.log(
   `\n${sheet.title || sheet.kind} (${sheet.kind}) — route ends at ${result.routeEndKm.toFixed(2)} km\n`,
 );
 console.log('From km   To km   Avg speed');
-result.segments.forEach((s, i) => {
-  const speed = `${result.uncertain.includes(i) ? '~' : ''}${s.speedKmh}`;
+for (const s of result.segments) {
   console.log(
-    `${s.fromKm.toFixed(2).padStart(7)} ${s.toKm.toFixed(2).padStart(7)} ${speed.padStart(9)} km/h` +
+    `${s.fromKm.toFixed(2).padStart(7)} ${s.toKm.toFixed(2).padStart(7)} ${String(s.speedKmh).padStart(9)} km/h` +
       (s.instruction ? `   ${s.instruction}` : ''),
   );
-});
+}
 
 if (result.unexplained > 0) {
   console.log(`\n${result.unexplained} entries on the sheet do not fit these speeds.`);
-}
-if (result.uncertain.length > 0) {
-  console.log(`~ marks a speed the printed times are too coarse to pin to one whole km/h.`);
 }

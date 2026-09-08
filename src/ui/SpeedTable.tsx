@@ -8,19 +8,11 @@ import { km } from './format';
  * book yields one stretch per printed instruction, and there the instruction is
  * what the crew navigates by — so it leads, with the speed beside it.
  */
-export function SpeedTable({
-  segments,
-  uncertain = [],
-}: {
-  segments: Segment[];
-  uncertain?: number[];
-}) {
-  const unsure = new Set(uncertain);
-
+export function SpeedTable({ segments }: { segments: Segment[] }) {
   if (segments.some((segment) => segment.instruction)) {
     return (
       <ol className="legs">
-        {segments.map((segment, index) => (
+        {segments.map((segment) => (
           <li key={segment.fromKm}>
             <div className="leg-text">
               <span className="leg-instruction">{segment.instruction}</span>
@@ -29,7 +21,6 @@ export function SpeedTable({
               </span>
             </div>
             <span className="speed">
-              {unsure.has(index) && <span className="about">±</span>}
               {segment.speedKmh}
               <span className="unit"> km/u</span>
             </span>

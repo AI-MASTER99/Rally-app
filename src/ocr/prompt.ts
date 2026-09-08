@@ -30,7 +30,7 @@ A list of route instructions, each with a distance and a time, for example
 Fill "legs" in the printed order, leave "rows" empty.
 - "distanceMetres": the printed distance converted to metres (0.60 km -> 600, 600m -> 600).
 - "instruction": the route instruction as printed, without the distance and time.
-- "time": the time exactly as printed, including its decimals or lack of them.
+- "time": the elapsed time since the start of the route, exactly as printed.
 - Set "distanceKind" to "cumulative" if the distance column counts from the start of
   the route (the values increase down the sheet, often headed "totaal" or "total"),
   or "leg" if each value is the length of that one leg. Read the column header and
@@ -41,8 +41,7 @@ Rules for both:
   headers before reading, and read straight through a fold.
 - Copy what you actually see. Do NOT compute, correct, interpolate or complete
   anything. If something is unreadable, return "" for it rather than a guess.
-- Keep the printed punctuation of each time, including the decimal. Whether a time
-  reads "1:11" or "1:11.4" matters and must not be normalised.
+- Keep the printed punctuation of each time, including the decimal.
 - Ignore anything outside the main table or list: the header, the logo, and in
   particular any small summary table of average speeds. That summary is the answer
   we are deriving and must not be transcribed.
