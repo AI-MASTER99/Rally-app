@@ -2,12 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { solveGrid, type Grid, type SolveResult } from '../core';
 import { transcribePhoto } from '../ocr/client';
 import { scannedTableToGrid } from '../ocr/toGrid';
-import { CheckPanel } from './CheckPanel';
 import { SpeedTable } from './SpeedTable';
-import { km } from './format';
+import { plural } from './format';
 
 interface Done {
-  title: string;
   grid: Grid;
   result: SolveResult;
 }
@@ -25,8 +23,8 @@ function loadLast(): Done | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    const saved = JSON.parse(raw) as { title: string; grid: Grid };
-    return { title: saved.title, grid: saved.grid, result: solveGrid(saved.grid) };
+    const grid = (JSON.parse(raw) as { grid: Grid }).grid;
+    return { grid, result: solveGrid(grid) };
   } catch {
     return null;
   }
@@ -51,21 +49,22 @@ export function App() {
       if (result.segments.length === 0) {
         throw new Error('Geen leesbare tijdtabel gevonden. Probeer een scherpere foto.');
       }
-      const done: Done = { title: table.title, grid, result };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ title: done.title, grid }));
-      setState({ status: 'done', done });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ grid }));
+      setState({ status: 'done', done: { grid, result } });
     } catch (error) {
-      setState({ status: 'error', message: error instanceof Error ? error.message : 'Onbekende fout.' });
+      setState({
+        status: 'error',
+        message: error instanceof Error ? error.message : 'Onbekende fout.',
+      });
     }
   }
 
+  const done = state.status === 'done' ? state.done : null;
+  // Only surfaced when the scan and the derived speeds actually disagree.
+  const unexplained = done ? done.result.mismatches.length + done.result.discarded.length : 0;
+
   return (
     <main className="app">
-      <header>
-        <h1>Rally Tijdtabel</h1>
-        <p className="sub">Foto van de tijdtabel in, gemiddelde snelheden uit.</p>
-      </header>
-
       <input
         ref={fileInput}
         type="file"
@@ -78,6 +77,15 @@ export function App() {
         }}
       />
 
+      {done && <SpeedTable segments={done.result.segments} />}
+
+      {unexplained > 0 && (
+        <p className="warning" role="status">
+          {plural(unexplained, 'cel', 'cellen')} op de foto {unexplained === 1 ? 'past' : 'passen'}{' '}
+          niet bij deze snelheden — controleer het blad.
+        </p>
+      )}
+
       {state.status === 'reading' ? (
         <p className="status" role="status">
           <span className="spinner" aria-hidden="true" />
@@ -85,7 +93,7 @@ export function App() {
         </p>
       ) : (
         <button className="primary" onClick={() => fileInput.current?.click()}>
-          {state.status === 'done' ? 'Nieuwe tabel fotograferen' : 'Tijdtabel fotograferen'}
+          {done ? 'Nieuwe tabel fotograferen' : 'Tijdtabel fotograferen'}
         </button>
       )}
 
@@ -93,15 +101,6 @@ export function App() {
         <p className="status error" role="alert">
           {state.message}
         </p>
-      )}
-
-      {state.status === 'done' && (
-        <>
-          {state.done.title && <h2 className="title">{state.done.title}</h2>}
-          <SpeedTable segments={state.done.result.segments} />
-          <p className="route">Traject tot {km(state.done.result.routeEndKm)} km.</p>
-          <CheckPanel grid={state.done.grid} result={state.done.result} />
-        </>
       )}
     </main>
   );
