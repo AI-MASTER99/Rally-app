@@ -73,8 +73,12 @@ dashboard and your protected URLs.
 
 Open the production domain and:
 
-- Visit `/api/ocr` directly. It should answer **405 Method Not Allowed** — that
-  is the function running and rejecting a GET, which proves the routing works.
+- Visit `/api/ocr` directly in a browser. It answers `{"ok":true,"hasApiKey":true}`.
+  That one line settles the two things that go wrong: whether the function is
+  running and routed, and whether it can see the key. `hasApiKey: false` means
+  the environment variable is missing, or the deployment predates it — add it and
+  redeploy. No JSON at all, or a 500, means the function did not load; read the
+  runtime log.
 - Photograph a sheet from the home page. If the speeds come back, you are done.
 
 Then open the production domain on the phone that will be in the car and use
@@ -118,9 +122,12 @@ Anthropic API; the derived speeds are kept in the phone's own local storage.
 
 ## Troubleshooting
 
-**`/api/ocr` returns 500.** Open **Deployments → the deployment → Logs** and
-look at the function's output. Nearly always a missing, misspelled or expired
-`ANTHROPIC_API_KEY`, or an account without credit.
+**Anything returns 500.** The route never answers 500 itself — a missing key is
+503, a failed transcription 502, both with a readable message. A 500 means the
+function crashed before reaching its own code, or was never deployed. Check
+`/api/ocr` in a browser first: no JSON means the function is not running, which
+is a deployment problem rather than a key problem. Then open **Deployments → the
+deployment → Runtime Logs**, where the stack trace names the cause.
 
 **The function times out.** `vercel.json` allows 120 s, and Vercel permits up to
 300 s on every plan, so raise it there if a large sheet needs longer.
