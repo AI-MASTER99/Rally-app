@@ -14,12 +14,11 @@ const PROBES: [name: string, load: () => Promise<unknown>][] = [
   ['zod', () => import('zod')],
   ['@anthropic-ai/sdk', () => import('@anthropic-ai/sdk')],
   ['@anthropic-ai/sdk/helpers/zod', () => import('@anthropic-ai/sdk/helpers/zod')],
-  ['../src/core', () => import('../src/core')],
-  ['../src/ocr/schema', () => import('../src/ocr/schema')],
-  ['../src/ocr/prompt', () => import('../src/ocr/prompt')],
-  ['../src/ocr/toGrid', () => import('../src/ocr/toGrid')],
-  ['../src/ocr/interpret', () => import('../src/ocr/interpret')],
-  ['../src/ocr/recognize', () => import('../src/ocr/recognize')],
+  ['../src/core/index.js', () => import('../src/core/index.js')],
+  ['../src/ocr/schema.js', () => import('../src/ocr/schema.js')],
+  ['../src/ocr/prompt.js', () => import('../src/ocr/prompt.js')],
+  ['../src/ocr/recognize.js', () => import('../src/ocr/recognize.js')],
+  ['../src/ocr/schema (no extension)', () => import('../src/ocr/schema')],
 ];
 
 export default {

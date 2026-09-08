@@ -6,8 +6,8 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
-import { TRANSCRIBE_PROMPT } from './prompt';
-import { ScannedSheetSchema, type OcrRequest, type ScannedSheet } from './schema';
+import { TRANSCRIBE_PROMPT } from './prompt.js';
+import { ScannedSheetSchema, type OcrRequest, type ScannedSheet } from './schema.js';
 
 const MODEL = 'claude-opus-5';
 

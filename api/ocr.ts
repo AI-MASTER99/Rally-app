@@ -11,8 +11,8 @@
  * `IncomingMessage` that has no `.json()`.
  */
 
-import { OcrError, recognizeSheet } from '../src/ocr/recognize';
-import { SUPPORTED_MEDIA_TYPES, type SupportedMediaType } from '../src/ocr/schema';
+import { OcrError, recognizeSheet } from '../src/ocr/recognize.js';
+import { SUPPORTED_MEDIA_TYPES, type SupportedMediaType } from '../src/ocr/schema.js';
 
 /** A downscaled photo is well under this; the ceiling only stops abuse. */
 const MAX_IMAGE_BYTES = 4_000_000;
