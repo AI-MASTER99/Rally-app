@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    // The root config is written for Vite and Vitest, which type-check without
+    // emitting. Vercel's builder reads the tsconfig nearest the function and
+    // would inherit `noEmit`, compiling this directory to nothing: the build
+    // succeeds, the route exists, and invoking it fails with no handler to run.
+    "noEmit": false,
+    "types": ["node"]
+  },
+  "include": ["../api", "../src"]
+}
