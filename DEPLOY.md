@@ -1,0 +1,111 @@
+# Deploying
+
+The app is a static front end plus one serverless function. The function exists
+for a single reason: it holds the Anthropic API key, so the key never reaches
+the browser. That rules out a purely static host such as GitHub Pages — there
+the key would have to ship in the bundle, where anyone could read it.
+
+These steps target **Vercel**, which the repository is already configured for.
+
+## 1. Get an Anthropic API key
+
+1. Sign in at [console.anthropic.com](https://console.anthropic.com).
+2. Add billing under **Plans & Billing** — a new key with no credit returns a
+   quota error on the first photo.
+3. **API keys → Create key**. Copy it; the console will not show it again.
+
+## 2. Import the repository
+
+1. Sign in at [vercel.com](https://vercel.com) with the GitHub account that owns
+   the repository.
+2. **Add New… → Project**, then import `AI-MASTER99/Rally-app`.
+3. Leave the build settings alone. `vercel.json` already pins the build command
+   (`npm run build`), the output directory (`dist`) and the function's time
+   limit, and Vercel detects Vite by itself.
+
+## 3. Add the API key *before* the first deploy
+
+On the same import screen, open **Environment Variables** and add:
+
+| Name                | Value          | Environments |
+| ------------------- | -------------- | ------------ |
+| `ANTHROPIC_API_KEY` | your key       | all three    |
+
+Name it exactly that. Anything prefixed `VITE_` is compiled into the browser
+bundle by Vite, so `VITE_ANTHROPIC_API_KEY` would publish your key.
+
+Adding it later works too, but environment variables are bound to a deployment:
+after adding one you have to **Deployments → ⋯ → Redeploy** for it to take
+effect.
+
+## 4. Deploy
+
+Press **Deploy** and wait about a minute.
+
+The repository's default branch is `claude/rally-timetable-photo-app-6pp07h`, so
+that branch is what Vercel treats as production — there is nothing to merge
+first. Every later push to it redeploys automatically; pushes to any other
+branch get their own preview URL.
+
+## 5. Check it
+
+Open the deployment URL and:
+
+- Visit `/api/ocr` directly. It should answer **405 Method Not Allowed** — that
+  is the function running and rejecting a GET, which proves the routing works.
+- Photograph a sheet from the home page. If the speeds come back, you are done.
+
+Then open the URL on the phone that will be in the car and use **Add to home
+screen**. It installs as an app, and the last derived speeds stay readable
+without signal.
+
+## Command line instead
+
+```bash
+npm i -g vercel
+vercel login
+vercel link                              # connect this checkout to a project
+vercel env add ANTHROPIC_API_KEY production
+vercel --prod
+```
+
+`vercel dev` then reproduces the deployed behaviour locally. Plain `npm run dev`
+does the same without the Vercel CLI, reading the key from `.env.local`.
+
+## What it costs to run
+
+Vercel's free tier covers this comfortably; the spend is the Anthropic API. Each
+photo is one call to Claude Opus 5 with an image — on the order of ten cents,
+most of it the model's reasoning tokens. If that matters at volume, the lever is
+`output_config: { effort: 'low' }` in `src/ocr/recognize.ts`: transcription is
+mechanical work that does not need much deliberation. Measure the accuracy on
+your own sheets before and after, since a misread table is worth more than the
+saving.
+
+Nothing is stored server-side. The photo goes to the function and on to the
+Anthropic API; the derived speeds are kept in the phone's own local storage.
+
+## Troubleshooting
+
+**`/api/ocr` returns 500.** Open **Deployments → the deployment → Logs** and
+look at the function's output. Nearly always a missing, misspelled or expired
+`ANTHROPIC_API_KEY`, or an account without credit.
+
+**The function times out.** `vercel.json` allows 120 s, and Vercel permits up to
+300 s on every plan, so raise it there if a large sheet needs longer.
+
+**"Geen leesbare tijdtabel of roadbook gevonden".** The model returned nothing
+it could parse as a sheet. Retake the photo with the table filling the frame and
+the paper flat.
+
+**A speed looks wrong.** For a time table, the warning line tells you how many
+cells disagree with the derived speeds — check those cells against the sheet.
+`npm run read-table -- photo.jpg` prints the same analysis from a terminal.
+
+## Another host
+
+`api/ocr.ts` exports `handleOcr`, a plain `Request → Response` function, and
+default-exports `{ fetch: handleOcr }` because that is the shape Vercel's Node
+runtime routes to. Other platforms want their own wrapper — Netlify Functions v2
+takes a bare default-exported function, Cloudflare Workers an object with
+`fetch` — so porting means a few lines around `handleOcr`, not a rewrite.

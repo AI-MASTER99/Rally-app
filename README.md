@@ -79,10 +79,9 @@ npm run read-table -- photo.jpg
 
 ## Deploying
 
-Built for Vercel (Netlify works the same way): `api/ocr.ts` becomes a serverless
-function so `ANTHROPIC_API_KEY` stays server-side. Set it as an environment
-variable in the project settings — a purely static host such as GitHub Pages
-cannot work here, since the key would have to ship in the bundle.
+`api/ocr.ts` becomes a serverless function so `ANTHROPIC_API_KEY` stays
+server-side, which rules out a purely static host such as GitHub Pages. Step by
+step: [DEPLOY.md](DEPLOY.md).
 
 It is a PWA: installable from the browser, and the last derived speed table is
 kept in `localStorage` so it stays readable without signal. Transcription itself

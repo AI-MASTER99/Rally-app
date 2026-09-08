@@ -1,8 +1,14 @@
 /**
- * POST /api/ocr — transcribe a photographed time table.
+ * POST /api/ocr — transcribe a photographed route sheet.
  *
- * Deployed as a serverless function (Vercel, Netlify) and mounted into the
- * Vite dev server by `devApiPlugin` so `npm run dev` behaves the same.
+ * Deployed as a serverless function and mounted into the Vite dev server by
+ * `devApiPlugin`, so `npm run dev` behaves the same.
+ *
+ * The default export is an object with a `fetch` method: that is the web
+ * standard signature Vercel's Node runtime recognises for files in `/api`. A
+ * bare default-exported function would be read as the older Node.js
+ * `(request, response)` handler instead, and this one would be handed an
+ * `IncomingMessage` that has no `.json()`.
  */
 
 import { OcrError, recognizeSheet } from '../src/ocr/recognize';
@@ -17,7 +23,7 @@ const json = (body: unknown, status: number) =>
     headers: { 'content-type': 'application/json' },
   });
 
-export default async function handler(request: Request): Promise<Response> {
+export async function handleOcr(request: Request): Promise<Response> {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
   let payload: { imageBase64?: unknown; mediaType?: unknown };
@@ -51,3 +57,5 @@ export default async function handler(request: Request): Promise<Response> {
     return json({ error: 'Reading the photo failed. Try again.' }, 502);
   }
 }
+
+export default { fetch: handleOcr };

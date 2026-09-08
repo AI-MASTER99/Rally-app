@@ -12,12 +12,12 @@ function devApiPlugin(): Plugin {
     configureServer(server) {
       server.middlewares.use('/api/ocr', async (req, res) => {
         try {
-          const { default: handler } = await server.ssrLoadModule('/api/ocr.ts');
+          const { handleOcr } = await server.ssrLoadModule('/api/ocr.ts');
 
           const chunks: Buffer[] = [];
           for await (const chunk of req) chunks.push(chunk as Buffer);
 
-          const response: Response = await handler(
+          const response: Response = await handleOcr(
             new Request(`http://localhost${req.url ?? '/'}`, {
               method: req.method,
               headers: req.headers as HeadersInit,
