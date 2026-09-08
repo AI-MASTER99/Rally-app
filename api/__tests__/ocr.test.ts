@@ -18,9 +18,43 @@ describe('POST /api/ocr', () => {
     expect(typeof ocr.fetch).toBe('function');
   });
 
-  it('rejects anything but POST', async () => {
+  it('answers a GET with a health check', async () => {
     const response = await handleOcr(new Request('http://localhost/api/ocr'));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      ok: true,
+      hasApiKey: Boolean(process.env['ANTHROPIC_API_KEY']),
+    });
+  });
+
+  it('rejects anything but GET or POST', async () => {
+    const response = await handleOcr(
+      new Request('http://localhost/api/ocr', { method: 'DELETE' }),
+    );
     expect(response.status).toBe(405);
+  });
+
+  it('says so plainly when the server has no key', async () => {
+    const key = process.env['ANTHROPIC_API_KEY'];
+    delete process.env['ANTHROPIC_API_KEY'];
+    try {
+      const response = await post({ imageBase64: 'abc', mediaType: 'image/jpeg' });
+      expect(response.status).toBe(503);
+      expect(await error(response)).toContain('ANTHROPIC_API_KEY');
+    } finally {
+      if (key !== undefined) process.env['ANTHROPIC_API_KEY'] = key;
+    }
+  });
+
+  it('answers a malformed request even with no key configured', async () => {
+    const key = process.env['ANTHROPIC_API_KEY'];
+    delete process.env['ANTHROPIC_API_KEY'];
+    try {
+      expect((await post({ mediaType: 'image/jpeg' })).status).toBe(400);
+      expect((await post({ imageBase64: 'a', mediaType: 'image/heic' })).status).toBe(415);
+    } finally {
+      if (key !== undefined) process.env['ANTHROPIC_API_KEY'] = key;
+    }
   });
 
   it('rejects a body that is not JSON', async () => {

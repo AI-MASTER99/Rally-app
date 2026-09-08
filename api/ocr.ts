@@ -24,6 +24,11 @@ const json = (body: unknown, status: number) =>
   });
 
 export async function handleOcr(request: Request): Promise<Response> {
+  // A GET answers the two questions a failing deployment raises: is the
+  // function running at all, and does it have a key? Open it in a browser.
+  if (request.method === 'GET') {
+    return json({ ok: true, hasApiKey: Boolean(process.env['ANTHROPIC_API_KEY']) }, 200);
+  }
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
   let payload: { imageBase64?: unknown; mediaType?: unknown };
@@ -45,6 +50,12 @@ export async function handleOcr(request: Request): Promise<Response> {
     return json({ error: 'Image too large. Take the photo again from closer by.' }, 413);
   }
 
+  // Checked after the request itself, so a bad request still gets its own
+  // answer rather than being masked by the server's configuration.
+  if (!process.env['ANTHROPIC_API_KEY']) {
+    return json({ error: 'De server heeft geen ANTHROPIC_API_KEY.' }, 503);
+  }
+
   try {
     const table = await recognizeSheet({
       imageBase64,
@@ -53,8 +64,11 @@ export async function handleOcr(request: Request): Promise<Response> {
     return json(table, 200);
   } catch (error) {
     if (error instanceof OcrError) return json({ error: error.message }, error.status);
+    // The full error goes to the runtime log; the client gets the gist of it,
+    // which is the difference between "it broke" and a fixable diagnosis.
     console.error('OCR failed', error);
-    return json({ error: 'Reading the photo failed. Try again.' }, 502);
+    const reason = error instanceof Error ? error.message : String(error);
+    return json({ error: `Foto lezen mislukte: ${reason}` }, 502);
   }
 }
 
