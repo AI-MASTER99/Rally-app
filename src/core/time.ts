@@ -45,3 +45,16 @@ export function formatTime(seconds: number): string {
 export function formatKm(hm: number): string {
   return (hm / 10).toFixed(2);
 }
+
+/**
+ * How far a printed time can be from the true one, from its notation alone.
+ *
+ * `1:11` was rounded to a whole second, `1:11.4` to a tenth. That difference
+ * decides whether a short leg pins one whole km/h or leaves several possible,
+ * so it has to be read off the printed text rather than assumed.
+ */
+export function timePrecision(raw: string | null | undefined): number {
+  if (raw == null) return 0.5;
+  const decimals = /[.,](\d+)\s*$/.exec(raw.trim());
+  return decimals ? 0.5 * 10 ** -decimals[1]!.length : 0.5;
+}

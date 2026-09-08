@@ -7,7 +7,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { TRANSCRIBE_PROMPT } from './prompt';
-import { ScannedTableSchema, type OcrRequest, type ScannedTable } from './schema';
+import { ScannedSheetSchema, type OcrRequest, type ScannedSheet } from './schema';
 
 const MODEL = 'claude-opus-5';
 
@@ -24,7 +24,7 @@ export class OcrError extends Error {
 let client: Anthropic | undefined;
 const getClient = () => (client ??= new Anthropic());
 
-export async function recognizeTable({ imageBase64, mediaType }: OcrRequest): Promise<ScannedTable> {
+export async function recognizeSheet({ imageBase64, mediaType }: OcrRequest): Promise<ScannedSheet> {
   const response = await getClient().messages.parse({
     model: MODEL,
     max_tokens: 16000,
@@ -37,7 +37,7 @@ export async function recognizeTable({ imageBase64, mediaType }: OcrRequest): Pr
         ],
       },
     ],
-    output_config: { format: zodOutputFormat(ScannedTableSchema) },
+    output_config: { format: zodOutputFormat(ScannedSheetSchema) },
   });
 
   if (response.stop_reason === 'refusal') {
@@ -47,7 +47,7 @@ export async function recognizeTable({ imageBase64, mediaType }: OcrRequest): Pr
     throw new OcrError('The table is larger than one response can hold.', 502);
   }
   if (!response.parsed_output) {
-    throw new OcrError('Could not read a time table in this image.', 422);
+    throw new OcrError('Could not read a route sheet in this image.', 422);
   }
   return response.parsed_output;
 }

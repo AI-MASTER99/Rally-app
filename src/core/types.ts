@@ -27,6 +27,11 @@ export interface Segment {
   fromKm: number;
   toKm: number;
   speedKmh: number;
+  /**
+   * The printed route instruction for this stretch, when the sheet had one.
+   * Time tables have no instructions; road books are a list of them.
+   */
+  instruction?: string;
 }
 
 /** A cell whose scanned value disagrees with the reconstructed schedule. */

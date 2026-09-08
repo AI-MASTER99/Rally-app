@@ -5,7 +5,7 @@
  * Vite dev server by `devApiPlugin` so `npm run dev` behaves the same.
  */
 
-import { OcrError, recognizeTable } from '../src/ocr/recognize';
+import { OcrError, recognizeSheet } from '../src/ocr/recognize';
 import { SUPPORTED_MEDIA_TYPES, type SupportedMediaType } from '../src/ocr/schema';
 
 /** A downscaled photo is well under this; the ceiling only stops abuse. */
@@ -40,7 +40,7 @@ export default async function handler(request: Request): Promise<Response> {
   }
 
   try {
-    const table = await recognizeTable({
+    const table = await recognizeSheet({
       imageBase64,
       mediaType: mediaType as SupportedMediaType,
     });

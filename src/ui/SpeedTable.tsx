@@ -1,8 +1,44 @@
 import type { Segment } from '../core';
 import { km } from './format';
 
-/** The deliverable: the small summary table printed under the sheet. */
-export function SpeedTable({ segments }: { segments: Segment[] }) {
+/**
+ * The deliverable.
+ *
+ * A time table yields anonymous stretches, so it reads best as a table. A road
+ * book yields one stretch per printed instruction, and there the instruction is
+ * what the crew navigates by — so it leads, with the speed beside it.
+ */
+export function SpeedTable({
+  segments,
+  uncertain = [],
+}: {
+  segments: Segment[];
+  uncertain?: number[];
+}) {
+  const unsure = new Set(uncertain);
+
+  if (segments.some((segment) => segment.instruction)) {
+    return (
+      <ol className="legs">
+        {segments.map((segment, index) => (
+          <li key={segment.fromKm}>
+            <div className="leg-text">
+              <span className="leg-instruction">{segment.instruction}</span>
+              <span className="leg-range">
+                {km(segment.fromKm)} – {km(segment.toKm)} km
+              </span>
+            </div>
+            <span className="speed">
+              {unsure.has(index) && <span className="about">±</span>}
+              {segment.speedKmh}
+              <span className="unit"> km/u</span>
+            </span>
+          </li>
+        ))}
+      </ol>
+    );
+  }
+
   return (
     <table className="speeds">
       <thead>

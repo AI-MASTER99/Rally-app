@@ -97,3 +97,36 @@ button.primary:active { transform: translateY(1px); }
   animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* Road book: the instruction leads, the speed sits beside it. */
+ol.legs {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--panel);
+  border-radius: 0.9rem;
+  overflow: hidden;
+}
+ol.legs li {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+}
+ol.legs li:last-child { border-bottom: 0; }
+.leg-text { display: flex; flex-direction: column; min-width: 0; }
+.leg-instruction { overflow-wrap: anywhere; }
+.leg-range {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+ol.legs .speed {
+  margin-left: auto;
+  white-space: nowrap;
+  font-size: 1.5rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.about { color: var(--muted); font-weight: 400; }

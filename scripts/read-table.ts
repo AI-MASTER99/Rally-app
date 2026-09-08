@@ -9,9 +9,8 @@
 
 import { readFileSync } from 'node:fs';
 import { extname } from 'node:path';
-import { formatTime, solveGrid } from '../src/core';
-import { recognizeTable } from '../src/ocr/recognize';
-import { scannedTableToGrid } from '../src/ocr/toGrid';
+import { recognizeSheet } from '../src/ocr/recognize';
+import { interpretSheet } from '../src/ocr/interpret';
 import type { SupportedMediaType } from '../src/ocr/schema';
 
 const BY_EXTENSION: Record<string, SupportedMediaType> = {
@@ -33,29 +32,27 @@ if (!mediaType) {
   process.exit(1);
 }
 
-const table = await recognizeTable({
+const sheet = await recognizeSheet({
   imageBase64: readFileSync(path).toString('base64'),
   mediaType,
 });
-const grid = scannedTableToGrid(table);
-const result = solveGrid(grid);
-
-console.log(`\n${table.title || 'Time table'} — route ends at ${result.routeEndKm.toFixed(2)} km\n`);
-console.log('From km   To km   Avg speed');
-for (const s of result.segments) {
-  console.log(
-    `${s.fromKm.toFixed(2).padStart(7)} ${s.toKm.toFixed(2).padStart(7)} ${String(s.speedKmh).padStart(9)} km/h`,
-  );
-}
+const result = interpretSheet(sheet);
 
 console.log(
-  `\n${result.cellsChecked - result.mismatches.length}/${result.cellsChecked} scanned cells agree with this schedule.`,
+  `\n${sheet.title || sheet.kind} (${sheet.kind}) — route ends at ${result.routeEndKm.toFixed(2)} km\n`,
 );
-for (const m of result.mismatches) {
+console.log('From km   To km   Avg speed');
+result.segments.forEach((s, i) => {
+  const speed = `${result.uncertain.includes(i) ? '~' : ''}${s.speedKmh}`;
   console.log(
-    `  ${m.km.toFixed(2)} km: read ${formatTime(m.observed)}, expected ${formatTime(m.expected)}`,
+    `${s.fromKm.toFixed(2).padStart(7)} ${s.toKm.toFixed(2).padStart(7)} ${speed.padStart(9)} km/h` +
+      (s.instruction ? `   ${s.instruction}` : ''),
   );
+});
+
+if (result.unexplained > 0) {
+  console.log(`\n${result.unexplained} entries on the sheet do not fit these speeds.`);
 }
-for (const p of result.discarded) {
-  console.log(`  ${(p.hm / 10).toFixed(2)} km: read ${formatTime(p.t)}, runs backwards — ignored`);
+if (result.uncertain.length > 0) {
+  console.log(`~ marks a speed the printed times are too coarse to pin to one whole km/h.`);
 }

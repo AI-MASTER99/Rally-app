@@ -1,6 +1,6 @@
 /** Browser side: shrink the photo, send it to the API route, read it back. */
 
-import { ScannedTableSchema, type ScannedTable } from './schema';
+import { ScannedSheetSchema, type ScannedSheet } from './schema';
 
 /**
  * The Claude API gains nothing from more than ~1568 px on the long edge, and
@@ -9,7 +9,7 @@ import { ScannedTableSchema, type ScannedTable } from './schema';
 const MAX_EDGE = 1568;
 const JPEG_QUALITY = 0.85;
 
-export async function transcribePhoto(file: File, signal?: AbortSignal): Promise<ScannedTable> {
+export async function transcribePhoto(file: File, signal?: AbortSignal): Promise<ScannedSheet> {
   const imageBase64 = await downscaleToBase64(file);
 
   const response = await fetch('/api/ocr', {
@@ -28,7 +28,7 @@ export async function transcribePhoto(file: File, signal?: AbortSignal): Promise
     throw new Error(message);
   }
 
-  const parsed = ScannedTableSchema.safeParse(body);
+  const parsed = ScannedSheetSchema.safeParse(body);
   if (!parsed.success) throw new Error('The server returned an unexpected response.');
   return parsed.data;
 }

@@ -1,30 +1,26 @@
 import { useEffect, useRef, useState } from 'react';
-import { solveGrid, type Grid, type SolveResult } from '../core';
 import { transcribePhoto } from '../ocr/client';
-import { scannedTableToGrid } from '../ocr/toGrid';
+import { interpretSheet, type Interpretation } from '../ocr/interpret';
+import { ScannedSheetSchema, type ScannedSheet } from '../ocr/schema';
 import { SpeedTable } from './SpeedTable';
 import { plural } from './format';
-
-interface Done {
-  grid: Grid;
-  result: SolveResult;
-}
 
 type State =
   | { status: 'idle' }
   | { status: 'reading' }
-  | { status: 'done'; done: Done }
+  | { status: 'done'; result: Interpretation }
   | { status: 'error'; message: string };
 
-/** The last result survives a reload, so it stays readable without signal. */
+/** The last sheet survives a reload, so its speeds stay readable without signal. */
 const STORAGE_KEY = 'rally-tijdtabel:last';
 
-function loadLast(): Done | null {
+function loadLast(): Interpretation | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    const grid = (JSON.parse(raw) as { grid: Grid }).grid;
-    return { grid, result: solveGrid(grid) };
+    // Re-derive rather than store the answer: the sheet is the source of truth.
+    const sheet = ScannedSheetSchema.safeParse(JSON.parse(raw));
+    return sheet.success ? interpretSheet(sheet.data) : null;
   } catch {
     return null;
   }
@@ -36,21 +32,20 @@ export function App() {
 
   useEffect(() => {
     const last = loadLast();
-    if (last) setState({ status: 'done', done: last });
+    if (last) setState({ status: 'done', result: last });
   }, []);
 
   async function handleFile(file: File | undefined) {
     if (!file) return;
     setState({ status: 'reading' });
     try {
-      const table = await transcribePhoto(file);
-      const grid = scannedTableToGrid(table);
-      const result = solveGrid(grid);
+      const sheet: ScannedSheet = await transcribePhoto(file);
+      const result = interpretSheet(sheet);
       if (result.segments.length === 0) {
-        throw new Error('Geen leesbare tijdtabel gevonden. Probeer een scherpere foto.');
+        throw new Error('Geen leesbare tijdtabel of roadbook gevonden. Probeer een scherpere foto.');
       }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ grid }));
-      setState({ status: 'done', done: { grid, result } });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sheet));
+      setState({ status: 'done', result });
     } catch (error) {
       setState({
         status: 'error',
@@ -59,9 +54,7 @@ export function App() {
     }
   }
 
-  const done = state.status === 'done' ? state.done : null;
-  // Only surfaced when the scan and the derived speeds actually disagree.
-  const unexplained = done ? done.result.mismatches.length + done.result.discarded.length : 0;
+  const result = state.status === 'done' ? state.result : null;
 
   return (
     <main className="app">
@@ -77,23 +70,30 @@ export function App() {
         }}
       />
 
-      {done && <SpeedTable segments={done.result.segments} />}
+      {result && <SpeedTable segments={result.segments} uncertain={result.uncertain} />}
 
-      {unexplained > 0 && (
+      {/* Only shown when the sheet and the derived speeds actually disagree. */}
+      {result && result.unexplained > 0 && (
         <p className="warning" role="status">
-          {plural(unexplained, 'cel', 'cellen')} op de foto {unexplained === 1 ? 'past' : 'passen'}{' '}
-          niet bij deze snelheden — controleer het blad.
+          {plural(result.unexplained, 'regel', 'regels')} op de foto{' '}
+          {result.unexplained === 1 ? 'past' : 'passen'} niet bij deze snelheden — controleer het
+          blad.
+        </p>
+      )}
+      {result && result.uncertain.length > 0 && (
+        <p className="warning" role="status">
+          Bij ± staan de tijden te grof op het blad om de snelheid op één km/u vast te leggen.
         </p>
       )}
 
       {state.status === 'reading' ? (
         <p className="status" role="status">
           <span className="spinner" aria-hidden="true" />
-          Tabel wordt gelezen…
+          Blad wordt gelezen…
         </p>
       ) : (
         <button className="primary" onClick={() => fileInput.current?.click()}>
-          {done ? 'Nieuwe tabel fotograferen' : 'Tijdtabel fotograferen'}
+          {result ? 'Nieuwe tabel fotograferen' : 'Tijdtabel fotograferen'}
         </button>
       )}
 
