@@ -140,6 +140,32 @@ the paper flat.
 cells disagree with the derived speeds — check those cells against the sheet.
 `npm run read-table -- photo.jpg` prints the same analysis from a terminal.
 
+## Editing the function later
+
+Vercel does not bundle the functions. It compiles each file on its own and lets
+Node resolve the imports at runtime, and Node's ESM resolver needs an explicit
+file extension — it will not try `.js` for you, and will not resolve a directory
+to its `index`. So inside the functions' import graph, write
+
+```ts
+import { recognizeSheet } from '../src/ocr/recognize.js';   // not '../src/ocr/recognize'
+import { solveGrid } from '../src/core/index.js';           // not '../src/core'
+```
+
+The `.js` is what TypeScript expects here; it maps back to the `.ts` source, and
+Vite resolves it the same way.
+
+Nothing local catches a missing extension. The type checker, Vitest and the dev
+server all resolve bundler-style, so the code runs fine everywhere except on the
+deployed site, where the whole function fails to load with
+`FUNCTION_INVOCATION_FAILED`. `api/__tests__/imports.test.ts` walks the
+functions' real import graph and fails on any relative specifier Node could not
+resolve — it is the only thing standing between you and that afternoon.
+
+The rest of `src/` is free to use bare specifiers, because Vite bundles the
+front end. The boundary is exactly "reachable from `api/`", which is what the
+test checks.
+
 ## Another host
 
 `api/ocr.ts` exports `handleOcr`, a plain `Request → Response` function, and
