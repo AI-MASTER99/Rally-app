@@ -47,17 +47,48 @@ that branch is what Vercel treats as production — there is nothing to merge
 first. Every later push to it redeploys automatically; pushes to any other
 branch get their own preview URL.
 
-## 5. Check it
+## 5. Use the right URL
 
-Open the deployment URL and:
+Vercel hands out several URLs per project, and they are not equally public:
+
+| URL                                        | Who can open it                    |
+| ------------------------------------------ | ---------------------------------- |
+| `your-project.vercel.app` — the production domain | anyone, no login |
+| `your-project-a1b2c3-you.vercel.app` — a generated deployment URL | only you, after a Vercel login |
+| a preview URL from a non-default branch    | only you, after a Vercel login     |
+
+New projects get Deployment Protection switched on by default. On the Hobby
+plan that is Vercel Authentication with Standard Protection: it covers preview
+and generated deployment URLs, while the production domain stays public.
+
+So share the **production domain**, the one on the project's overview page under
+**Domains**. Copying the link off a deployment's detail page gives you a
+generated URL instead, and on any other device that lands on a Vercel login
+screen — which looks exactly like the app demanding an account.
+
+Nobody needs a Vercel account to use the app. The login only ever guards *your*
+dashboard and your protected URLs.
+
+## 6. Check it
+
+Open the production domain and:
 
 - Visit `/api/ocr` directly. It should answer **405 Method Not Allowed** — that
   is the function running and rejecting a GET, which proves the routing works.
 - Photograph a sheet from the home page. If the speeds come back, you are done.
 
-Then open the URL on the phone that will be in the car and use **Add to home
-screen**. It installs as an app, and the last derived speeds stay readable
-without signal.
+Then open the production domain on the phone that will be in the car and use
+**Add to home screen**. It installs as an app, and the last derived speeds stay
+readable without signal.
+
+### The flip side of a public URL
+
+Anyone who has the link can use it, and every photo they send spends your
+Anthropic credit. There is no way to password-protect a production domain on
+the Hobby plan — that needs Pro or Enterprise. So keep the link within the crew,
+and set a spend limit under **Plans & Billing → Spend limits** in the Anthropic
+console. If the link ever gets out, a shared code in front of the function is a
+small change.
 
 ## Command line instead
 
