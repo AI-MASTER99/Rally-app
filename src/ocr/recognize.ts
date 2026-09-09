@@ -21,8 +21,35 @@ export class OcrError extends Error {
   }
 }
 
+/**
+ * What the deployment can tell you about its key without revealing it.
+ *
+ * A key pasted into a dashboard field often carries a trailing newline or a
+ * stray space, and the API rejects that as invalid with nothing to see. The
+ * length and shape are enough to tell that apart from a wrong or truncated
+ * key; none of it is secret.
+ */
+export function describeApiKey(): {
+  hasApiKey: boolean;
+  keyLength: number;
+  hadSurroundingWhitespace: boolean;
+  looksLikeAnthropicKey: boolean;
+} {
+  const raw = process.env['ANTHROPIC_API_KEY'] ?? '';
+  const key = raw.trim();
+  return {
+    hasApiKey: key !== '',
+    keyLength: key.length,
+    hadSurroundingWhitespace: raw !== key,
+    looksLikeAnthropicKey: key.startsWith('sk-ant-'),
+  };
+}
+
 let client: Anthropic | undefined;
-const getClient = () => (client ??= new Anthropic());
+// Trimmed rather than left to the SDK's own env lookup, so a pasted newline
+// does not turn into an authentication error.
+const getClient = () =>
+  (client ??= new Anthropic({ apiKey: (process.env['ANTHROPIC_API_KEY'] ?? '').trim() }));
 
 export async function recognizeSheet({ imageBase64, mediaType }: OcrRequest): Promise<ScannedSheet> {
   const response = await getClient().messages.parse({

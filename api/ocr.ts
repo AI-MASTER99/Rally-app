@@ -11,7 +11,7 @@
  * `IncomingMessage` that has no `.json()`.
  */
 
-import { OcrError, recognizeSheet } from '../src/ocr/recognize.js';
+import { describeApiKey, OcrError, recognizeSheet } from '../src/ocr/recognize.js';
 import { SUPPORTED_MEDIA_TYPES, type SupportedMediaType } from '../src/ocr/schema.js';
 
 /** A downscaled photo is well under this; the ceiling only stops abuse. */
@@ -27,7 +27,7 @@ export async function handleOcr(request: Request): Promise<Response> {
   // A GET answers the two questions a failing deployment raises: is the
   // function running at all, and does it have a key? Open it in a browser.
   if (request.method === 'GET') {
-    return json({ ok: true, hasApiKey: Boolean(process.env['ANTHROPIC_API_KEY']) }, 200);
+    return json({ ok: true, ...describeApiKey() }, 200);
   }
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
@@ -52,7 +52,7 @@ export async function handleOcr(request: Request): Promise<Response> {
 
   // Checked after the request itself, so a bad request still gets its own
   // answer rather than being masked by the server's configuration.
-  if (!process.env['ANTHROPIC_API_KEY']) {
+  if (!describeApiKey().hasApiKey) {
     return json({ error: 'De server heeft geen ANTHROPIC_API_KEY.' }, 503);
   }
 

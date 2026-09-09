@@ -21,9 +21,9 @@ describe('POST /api/ocr', () => {
   it('answers a GET with a health check', async () => {
     const response = await handleOcr(new Request('http://localhost/api/ocr'));
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({
+    expect(await response.json()).toMatchObject({
       ok: true,
-      hasApiKey: Boolean(process.env['ANTHROPIC_API_KEY']),
+      hasApiKey: Boolean(process.env['ANTHROPIC_API_KEY']?.trim()),
     });
   });
 
@@ -43,6 +43,24 @@ describe('POST /api/ocr', () => {
       expect(await error(response)).toContain('ANTHROPIC_API_KEY');
     } finally {
       if (key !== undefined) process.env['ANTHROPIC_API_KEY'] = key;
+    }
+  });
+
+  it('reports a key pasted with surrounding whitespace', async () => {
+    const key = process.env['ANTHROPIC_API_KEY'];
+    process.env['ANTHROPIC_API_KEY'] = '  sk-ant-test-value\n';
+    try {
+      const response = await handleOcr(new Request('http://localhost/api/ocr'));
+      expect(await response.json()).toEqual({
+        ok: true,
+        hasApiKey: true,
+        keyLength: 'sk-ant-test-value'.length,
+        hadSurroundingWhitespace: true,
+        looksLikeAnthropicKey: true,
+      });
+    } finally {
+      if (key === undefined) delete process.env['ANTHROPIC_API_KEY'];
+      else process.env['ANTHROPIC_API_KEY'] = key;
     }
   });
 
